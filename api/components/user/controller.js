@@ -6,7 +6,6 @@
  * * Update User => Id, UserData => PUT
  * * Delete user => Id => DELETE
  */
- import { v4 as uuidv4 } from 'uuid';
 import { response } from "../../../network";
 const fs = require('fs');
 
@@ -14,43 +13,6 @@ const fs = require('fs');
 const json_users = fs.readFileSync('api/users.json', 'utf-8');
 let users = JSON.parse(json_users);
 
-//*POST
-export const login = (req, res) => {
-  // ?Destructuracion
-  const { email, password } = req.body;
-  console.log(req.body)
-  return response({
-    res,
-    data: { email, password },
-  });
-};
-
-export const signUp = (req, res) => {
-  const { name, last_name, email, password } = req.body;
-
-  if (!name || !last_name || !email || !password) {
-    res.status(400).send("you must complete all entries.");
-    return;
-  }
-
-  let newUser = {
-    id: uuidv4(),
-    name,
-    last_name,
-    email,
-    password
-  }
-  // add a new user to the array
-  users.push(newUser);
-  // saving the array in a file
-  const new_json_users = JSON.stringify(users);
-  fs.writeFileSync('api/users.json', new_json_users, 'utf-8');
-
-  return response({
-    res,
-    data: { name, last_name, email, password },
-  });
-};
 //GET
 export const showUsers = (req, res) => {
   return response({
