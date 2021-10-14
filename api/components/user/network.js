@@ -1,5 +1,5 @@
 import express from "express";
-import { login, signUp, showUsers, deleteUser, updateUser } from "./controller";
+import { login, signUp, showUsers, deleteUser, updateUser, showOne } from "./controller";
 
 const userRouter = express.Router();
 
@@ -9,6 +9,7 @@ const userRouter = express.Router();
 // userRouter.route("/signup").post(signUp);
 //-------------------------Rutas protegidas--------------------------------
 //en estas rutas se recibe el token
+userRouter.route("/show/:id").get(showOne);
 userRouter.route("/users").get(showUsers);
 userRouter.route("/update/:id").put(updateUser);
 userRouter.route("/delete/:id").delete(deleteUser);

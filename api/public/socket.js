@@ -55,8 +55,8 @@ form.addEventListener("submit", function (e) {
 
   //* Esta a la espera de una respuesta (el res)
   server.on("save:comment", (message) => {
-      console.log(message.message)
-    commentCard(message.message)
+      console.log(message)
+    commentCard(message)
   });
 
   e.target[0].value = "";

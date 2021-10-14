@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { response } from '../../network';
-import {secret} from '../config/config';
+import {secret} from '../../config/config';
 
 //Existen 2 funciones principales en JWT
 //sign => Se encarga de generar el token
@@ -24,7 +24,7 @@ export const verify = (token) => {
 
 const getToken = (authorization, res) => {
     if (authorization === null) {
-        response({
+        return response({
           res,
           ok: false,
           status: 403,
@@ -54,6 +54,7 @@ const getToken = (authorization, res) => {
  */
 
  export const checkToken = (req, res, next) => {
+   try{
     //? Esto obtiene el valor de mi hader con el key authorization
     const authorization = req.headers.authorization || null;
     //? obtengo el token
@@ -76,5 +77,8 @@ const getToken = (authorization, res) => {
   
     //? Todo esta ok puede seguir
     next();
+   }catch(e){
+     console.log("No existe un token o es invalido")
+   }
   };
     

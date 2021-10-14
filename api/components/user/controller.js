@@ -7,57 +7,70 @@
  * * Delete user => Id => DELETE
  */
 import { response } from "../../../network";
+import { list, findBy, upsert, remove } from "../../../store/dummy";
 const fs = require('fs');
+// paso 1 importar el modelo
+import userModel from "./model";
 
 //remember, your json file must have [] to read correctly
 const json_users = fs.readFileSync('api/users.json', 'utf-8');
 let users = JSON.parse(json_users);
 
 //GET
-export const showUsers = (req, res) => {
-  return response({
-    res,
-    data: users
-  });
+export const showUsers = async (req, res) => response({ res, data: await list(userModel), status: 200 });
+
+export const showOne = async (req, res) => {
+  const { id } = req.params;
+  console.log("id", id);
+  // recordemos que find recibe 3 cosas
+  // * 1 modelo
+  // * 2 key = _id
+  // * 3 value
+  // ? como puedo hacer para que el orden de los parametros no importe?
+  //? deberimoas pasarle un objeto usando destruccion
+  const user = await findBy({ value: id, model: userModel });
+
+  if (!user) {
+    response({ ok: false, status: 500, res, data: "error data not found" });
+  }
+
+  return response({ res, data: user });
 };
 
 //UPDATE
 export const updateUser = async (req, res) => {
+  const { id } = req.params;
   const { name, last_name, email, password } = req.body;
   if (!name || !last_name || !email || !password) {
-    res.status(400).send("you must complete at least one correct entry.");
-    return;
+    return response({res, status: 400, data: "you must complete at least one correct entry."});
   }
-  const userIndex = await users.findIndex(user => user.id === req.params.id);
-  if (userIndex<0){
-    return res.status(401).send("user not found")
-  }
-  const updatedUser = { ...users[userIndex], ...req.body};
-  const updatedUsers = [
-    ...users.slice(0, userIndex),
-    updatedUser,
-    ...users.slice(userIndex + 1),
-  ];
-  const json_users = JSON.stringify(updatedUsers);
-  fs.writeFileSync('api/users.json', json_users, 'utf-8');
-  return response({
-    res,
-    ok: "User updated correctly.",
-    data: updatedUser,
-  });
-}
+  // ademas del id usamos el bomodeldy que contiene los datos a cambiar
+  const users = await upsert({ model: userModel, id, data: req.body });
+  if (!users) {
+    return response({
+      ok: false,
+      status: 500,
+      res,
+      data: "user not found",
+    });
+  };
+  return response({ res, data: users });
+};
 
 //DELETE
 export const deleteUser = async (req, res) => {
-  console.log(req.params.id)
-  const userIndex = await users.findIndex(user => user.id === req.params.id);
-  if (userIndex<0){
-    return res.status(401).send("process failed, user not found")
-  }
-  users = users.filter(user => user.id != req.params.id);
+  const { id } = req.params;
 
-  // saving data
-  const json_users = JSON.stringify(users);
-  fs.writeFileSync('api/users.json', json_users, 'utf-8');
-  res.status(200).send("User has been deleted");
+  const users = await remove(userModel, id);
+
+  if (!users) {
+    return response({
+      res,
+      status: 500,
+      ok: false,
+      data: { error: "process failed, user not found" },
+    });
+  }
+
+  return response({ res, data: users });
 };

@@ -1,51 +1,65 @@
-import { v4 as uuidv4 } from 'uuid';
 import { sign } from "../../auth";
-const fs = require('fs');
+import { store, findBy } from "../../../store/dummy";
 import { response } from "../../../network";
+import { hash, compare } from "../../../helper/encrypt";
+import userModel from "../user/model";
 
-//remember, your json file must have [] to read correctly
-const json_users = fs.readFileSync('api/users.json', 'utf-8');
-let users = JSON.parse(json_users);
+export const login = async (req, res) => {
+  // ?Destructuracion
+  const user = req.body;
 
-//*POST
-export const login = (req, res) => {
-    // ?Destructuracion
-    const user = req.body;
-    //este payload se envia a sign para que se cree el token
-    const payload = {
-      email: user.email,
-      password: user.password
-    }
-    const token = sign(payload)
-    return response({
-      res,
-      data: { user, token },
-    });
+  //? Este payload se envia a sign para ser parte de la creacion del token
+  const payload = {
+    email: user.email,
+    password: user.password,
   };
 
-  export const signUp = (req, res) => {
-    const { name, last_name, email, password } = req.body;
-  
-    if (!name || !last_name || !email || !password) {
-      res.status(400).send("you must complete all entries.");
-      return;
-    }
-  
-    let newUser = {
-      id: uuidv4(),
-      name,
-      last_name,
-      email,
-      password
-    }
-    // add a new user to the array
-    users.push(newUser);
-    // saving the array in a file
-    const new_json_users = JSON.stringify(users);
-    fs.writeFileSync('api/users.json', new_json_users, 'utf-8');
-  
+  const token = sign(payload);
+
+  //? primer debo buscar a mi usario
+  const userData = await findBy({model: userModel, key:"email", value:user.email});
+  console.log("llegue aqui ", userData)
+  //? luego debo ver si existe
+  if (!userData) return response({res, ok: false, status: 500, data: {message: "user not exist"}});
+  //? luego comparo la contraseña
+  const validate = compare(user.password, userData.password);
+
+  if (!validate) {
     return response({
       res,
-      data: users,
+      ok: false,
+      status: 500,
+      data: {
+        message: "User invalid",
+      },
     });
+  }
+
+  return response({
+    res,
+    data: {
+      user,
+      token,
+    },
+  });
+
+  //? si es ok retorno al usuario con su token
+};
+
+export const signUp = async (req, res) => {
+  const user = req.body;
+
+  //* Creamos el data del usuario nuevo
+  // borramos el id porque mongodb ya lo pone
+
+  const data = {
+    name: user.name,
+    last_name: user.last_name,
+    email: user.email,
+    password: hash(user.password),
   };
+
+  const users = await store(userModel, data);
+
+  return response({ res, data: users, status: 201 });
+};
